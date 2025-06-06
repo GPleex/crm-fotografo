@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+{% block conteudo %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Cliente</th>
+      <th>Tipo</th>
+      <th>Data</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for contrato in contratos %}
+    <tr>
+      <td>{{ contrato.id }}</td>
+      <td>{{ contrato.cliente.nome }}</td>
+      <td>{{ contrato.tipo }}</td>
+      <td>{{ contrato.data_criacao.strftime('%d/%m/%Y') }}</td>
+      <td>
+        <a href="{{ url_for('visualizar_contrato', id=contrato.id) }}" class="btn btn-sm btn-secondary">Visualizar</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

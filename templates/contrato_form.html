@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Contrato - {{ tipo|capitalize }}</title>
+</head>
+<body>
+    <h1>Novo Contrato de {{ tipo }}</h1>
+
+    <form method="POST">
+        <label>Cliente:</label>
+        <select name="cliente_id" required>
+            {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.cpf }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        {% if tipo == 'ensaio' %}
+            <label>Data do ensaio:</label>
+            <input type="date" name="data_ensaio" required><br>
+
+            <label>Horário:</label>
+            <input type="time" name="horario_ensaio" required><br>
+
+            <label>Local:</label>
+            <input type="text" name="local_ensaio" required><br>
+
+            <label>Cidade/Estado:</label>
+            <input type="text" name="cidade_estado_ensaio" required><br>
+
+            <label>Duração:</label>
+            <input type="text" name="duracao_ensaio" placeholder="ex: 2h" required><br>
+        {% elif tipo == 'evento' %}
+            <label>Nome do evento:</label>
+            <input type="text" name="nome_evento" required><br>
+
+            <label>Data do evento:</label>
+            <input type="date" name="data_evento" required><br>
+
+            <label>Horário:</label>
+            <input type="time" name="horario_evento" required><br>
+
+            <label>Local:</label>
+            <input type="text" name="local_evento" required><br>
+
+            <label>Cidade/Estado:</label>
+            <input type="text" name="cidade_estado_evento" required><br>
+
+            <label>Tempo de cobertura:</label>
+            <input type="text" name="tempo_cobertura" placeholder="ex: até 4h" required><br>
+
+            <label>Quantidade de fotógrafos:</label>
+            <input type="number" name="qtd_fotografos" required><br>
+        {% endif %}
+
+        <label>Descrição do serviço:</label><br>
+        <textarea name="descricao_servico" rows="4" cols="50" required></textarea><br>
+
+        <label>Valor:</label>
+        <input type="text" name="valor" required><br>
+
+        <label>Forma de pagamento:</label><br>
+        <textarea name="forma_pagamento" rows="2" cols="50" required></textarea><br>
+
+        <button type="submit">Salvar contrato</button>
+    </form>
+</body>
+</html>
