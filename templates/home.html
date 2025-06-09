@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+{% block conteudo %}
+<div class="text-center">
+    <h2 class="mb-4">Bem-vindo ao sistema de contratos Aquele Álbum</h2>
+    <p class="lead">Utilize os links abaixo para navegar pelo sistema:</p>
+
+    <div class="d-grid gap-2 col-6 mx-auto mt-4">
+        <a href="/contratos" class="btn btn-outline-success btn-lg">📑 Ver Contratos</a>
+        <a href="/contrato/novo/ensaio" class="btn btn-outline-info">➕ Novo Contrato de Ensaio</a>
+        <a href="/contrato/novo/evento" class="btn btn-outline-info">➕ Novo Contrato de Evento</a>
+        <a href="/clientes" class="btn btn-outline-info">➕ Novo Cliente</a>
+    </div>
+</div>
+{% endblock %}

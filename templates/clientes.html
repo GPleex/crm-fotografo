@@ -1,31 +1,5 @@
 {% extends 'layout.html' %}
 {% block conteudo %}
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Aquele Álbum</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="/clientes">Clientes</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/contratos">Contratos</a>
-        </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Novo Contrato</a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/contrato/novo/ensaio">Ensaio</a></li>
-            <li><a class="dropdown-item" href="/contrato/novo/evento">Evento</a></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
 <h2 class="mb-4">Cadastro de Cliente</h2>
 <form method="POST" class="row g-3">
   <div class="col-md-6">
@@ -34,18 +8,52 @@
   </div>
   <div class="col-md-6">
     <label class="form-label">CPF:</label>
-    <input type="text" name="cpf" class="form-control" required>
+    <input type="text" name="cpf" id="cpf" class="form-control" maxlength="14" required>
   </div>
   <div class="col-md-6">
     <label class="form-label">Email:</label>
-    <input type="email" name="email" class="form-control">
+    <input type="email" name="email" class="form-control" required>
   </div>
   <div class="col-md-6">
     <label class="form-label">WhatsApp:</label>
-    <input type="text" name="whatsapp" class="form-control">
+    <input type="text" name="whatsapp" id="whatsapp" class="form-control" maxlength="13" placeholder="00 00000-0000" required>
   </div>
+
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Salvar</button>
   </div>
 </form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const cpfInput = document.getElementById("cpf");
+    if (cpfInput) {
+      cpfInput.addEventListener("input", function (e) {
+        let value = e.target.value.replace(/\D/g, "").slice(0, 11);
+        value = value
+          .replace(/(\d{3})(\d)/, "$1.$2")
+          .replace(/(\d{3})(\d)/, "$1.$2")
+          .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        e.target.value = value;
+      });
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+  const input = document.getElementById("whatsapp");
+  if (input) {
+    input.addEventListener("input", function () {
+      let value = input.value.replace(/\D/g, "").slice(0, 11); // Remove tudo que não for número
+      if (value.length >= 2) {
+        value = value.replace(/^(\d{2})(\d)/, "$1 $2");
+      }
+      if (value.length >= 7) {
+        value = value.replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+      }
+      input.value = value;
+    });
+  }
+});
+</script>
+
 {% endblock %}

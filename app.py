@@ -1,9 +1,10 @@
 from flask import Flask
+from markupsafe import Markup
 from flask_sqlalchemy import SQLAlchemy
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, render_template_string
 import os
 from datetime import datetime
-
+from clausulas_padrao import clausulas_por_tipo
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123456'
@@ -56,13 +57,26 @@ class Contrato(db.Model):
 
     cliente = db.relationship('Cliente', backref=db.backref('contratos', lazy=True))
 
+class ClausulaPersonalizada(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contrato_id = db.Column(db.Integer, db.ForeignKey('contrato.id'), nullable=False)
+    clausula_numero = db.Column(db.String(10), nullable=False)  # Ex: '4ª', '7ª'
+    conteudo = db.Column(db.Text, nullable=False)
+
+    contrato = db.relationship('Contrato', backref=db.backref('clausulas_personalizadas', lazy=True))
+
 # Rotas e lógica do aplicativo
 @app.route("/")
 def home():
-    return "Sistema iniciado com sucesso!"
+    return render_template("home.html")
 
-@app.route("/clientes", methods=["GET", "POST"])
-def clientes():
+@app.route("/clientes")
+def listar_clientes():
+    clientes = Cliente.query.order_by(Cliente.nome).all()
+    return render_template("listar_clientes.html", clientes=clientes)
+
+@app.route("/clientes/novo", methods=["GET", "POST"])
+def cadastrar_cliente():
     if request.method == "POST":
         nome = request.form["nome"]
         cpf = request.form["cpf"]
@@ -71,16 +85,46 @@ def clientes():
 
         if Cliente.query.filter_by(cpf=cpf).first():
             flash("CPF já cadastrado!", "error")
-            return redirect(url_for("clientes"))
+            return redirect(url_for("cadastrar_cliente"))
 
         cliente = Cliente(nome=nome, cpf=cpf, email=email, whatsapp=whatsapp)
         db.session.add(cliente)
         db.session.commit()
         flash("Cliente cadastrado com sucesso!", "success")
-        return redirect(url_for("clientes"))
+        return redirect(url_for("listar_clientes"))
 
-    clientes = Cliente.query.order_by(Cliente.nome).all()
-    return render_template("clientes.html", clientes=clientes)
+    return render_template("clientes.html")
+
+
+@app.route('/cliente/<int:id>/editar', methods=['GET', 'POST'])
+def editar_cliente(id):
+    cliente = Cliente.query.get_or_404(id)
+
+    if request.method == 'POST':
+        cliente.nome = request.form['nome']
+        cliente.cpf = request.form['cpf']
+        cliente.email = request.form.get('email')
+        cliente.whatsapp = request.form.get('whatsapp')
+        db.session.commit()
+        flash('Cliente atualizado com sucesso!', 'success')
+        return redirect(url_for('listar_clientes'))
+
+    return render_template('editar_cliente.html', cliente=cliente)
+
+
+@app.route('/cliente/<int:id>/excluir', methods=['POST'])
+def excluir_cliente(id):
+    cliente = Cliente.query.get_or_404(id)
+
+    if cliente.contratos:
+        flash('Não é possível excluir um cliente com contratos vinculados.', 'danger')
+        return redirect(url_for('listar_clientes'))
+
+    db.session.delete(cliente)
+    db.session.commit()
+    flash('Cliente excluído com sucesso.', 'success')
+    return redirect(url_for('listar_clientes'))
+
 
 @app.route("/contratos")
 def listar_contratos():
@@ -133,9 +177,88 @@ def visualizar_contrato(id):
     contrato = Contrato.query.get_or_404(id)
     cliente = contrato.cliente
     template = f'contrato_{contrato.tipo}.html'
-    return render_template(template, contrato=contrato, cliente=cliente)
 
-from datetime import datetime
+    # Renderiza o contrato original em string
+    html_contrato = render_template(template, contrato=contrato, cliente=cliente)
+
+    # Passa o conteúdo para a nova página de visualização
+    return render_template("contrato_visualizacao.html", contrato_conteudo=Markup(html_contrato))
+
+@app.route("/contrato/<int:id>/editar", methods=["GET", "POST"])
+def editar_contrato(id):
+    contrato = Contrato.query.get_or_404(id)
+    clientes = Cliente.query.order_by(Cliente.nome).all()
+
+    if request.method == "POST":
+        contrato.cliente_id = request.form.get("cliente_id")
+        contrato.descricao_servico = request.form.get("descricao_servico")
+        contrato.valor = request.form.get("valor")
+        contrato.forma_pagamento = request.form.get("forma_pagamento")
+
+        if contrato.tipo == "ensaio":
+            contrato.data_ensaio = request.form.get("data_ensaio")
+            contrato.horario_ensaio = request.form.get("horario_ensaio")
+            contrato.local_ensaio = request.form.get("local_ensaio")
+            contrato.cidade_estado_ensaio = request.form.get("cidade_estado_ensaio")
+            contrato.duracao_ensaio = request.form.get("duracao_ensaio")
+        else:
+            contrato.nome_evento = request.form.get("nome_evento")
+            contrato.data_evento = request.form.get("data_evento")
+            contrato.horario_evento = request.form.get("horario_evento")
+            contrato.local_evento = request.form.get("local_evento")
+            contrato.cidade_estado_evento = request.form.get("cidade_estado_evento")
+            contrato.tempo_cobertura = request.form.get("tempo_cobertura")
+            contrato.qtd_fotografos = request.form.get("qtd_fotografos")
+
+        db.session.commit()
+        flash("Contrato atualizado com sucesso!", "success")
+        return redirect(url_for("listar_contratos"))
+
+    return render_template("contrato_form.html", contrato=contrato, tipo=contrato.tipo, clientes=clientes)
+
+@app.route("/contrato/<int:id>/excluir", methods=["POST"])
+def excluir_contrato(id):
+    contrato = Contrato.query.get_or_404(id)
+    db.session.delete(contrato)
+    db.session.commit()
+    flash("Contrato excluído com sucesso!", "success")
+    return redirect(url_for("listar_contratos"))
+
+from flask import render_template_string
+
+@app.route("/contrato/<int:id>/editar_clausulas", methods=["GET", "POST"])
+def editar_clausulas(id):
+    contrato = Contrato.query.get_or_404(id)
+
+    if request.method == "POST":
+        selecionadas = request.form.getlist("clausulas")
+        for numero in selecionadas:
+            conteudo_editado = request.form.get(f"clausula_{numero}")
+            existente = ClausulaPersonalizada.query.filter_by(contrato_id=id, clausula_numero=numero).first()
+            if existente:
+                existente.conteudo = conteudo_editado
+            else:
+                nova = ClausulaPersonalizada(
+                    contrato_id=id,
+                    clausula_numero=numero,
+                    conteudo=conteudo_editado
+                )
+                db.session.add(nova)
+        db.session.commit()
+        flash("Cláusulas personalizadas salvas com sucesso!", "success")
+        return redirect(url_for("visualizar_contrato", id=id))
+
+    clausulas_base = clausulas_por_tipo.get(contrato.tipo, {})
+    clausulas_renderizadas = {
+        numero: render_template_string(template, contrato=contrato)
+        for numero, template in clausulas_base.items()
+    }
+
+    return render_template(
+        "editar_clausulas.html",
+        contrato=contrato,
+        clausulas=clausulas_renderizadas
+    )
 
 # Filtro para formatar data por extenso 
 @app.template_filter('data_por_extenso')
@@ -149,6 +272,15 @@ def data_por_extenso(data_str):
         return f"{data.day} de {meses[data.month - 1]} de {data.year}"
     except:
         return data_str
+    
+def validar_cpf(cpf):
+    return re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf)
+
+def clausula_personalizada(contrato, numero):
+    for c in contrato.clausulas_personalizadas:
+        if c.clausula_numero == numero:
+            return c.conteudo
+    return None
 
 if __name__ == "__main__":
     with app.app_context():

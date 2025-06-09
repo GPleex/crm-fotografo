@@ -1,68 +1,87 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Novo Contrato - {{ tipo|capitalize }}</title>
-</head>
-<body>
-    <h1>Novo Contrato de {{ tipo }}</h1>
+{% extends 'layout.html' %}
+{% block conteudo %}
+<h2 class="mb-4">{{ contrato and 'Editar' or 'Novo' }} Contrato de {{ tipo|capitalize }}</h2>
+<form method="POST" class="row g-3">
+  <div class="col-12">
+    <label class="form-label">Cliente:</label>
+    <select name="cliente_id" class="form-select" required>
+      {% for cliente in clientes %}
+        <option value="{{ cliente.id }}" {% if contrato and contrato.cliente_id == cliente.id %}selected{% endif %}>
+          {{ cliente.nome }} - {{ cliente.cpf }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <form method="POST">
-        <label>Cliente:</label>
-        <select name="cliente_id" required>
-            {% for cliente in clientes %}
-                <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.cpf }}</option>
-            {% endfor %}
-        </select><br><br>
+  {% if tipo == 'ensaio' %}
+    <div class="col-md-6">
+      <label class="form-label">Data do ensaio:</label>
+      <input type="date" name="data_ensaio" class="form-control" value="{{ contrato.data_ensaio if contrato else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Horário:</label>
+      <input type="time" name="horario_ensaio" class="form-control" value="{{ contrato.horario_ensaio if contrato else '' }}">
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Local:</label>
+      <input type="text" name="local_ensaio" class="form-control" value="{{ contrato.local_ensaio if contrato else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Cidade/Estado:</label>
+      <input type="text" name="cidade_estado_ensaio" class="form-control" value="{{ contrato.cidade_estado_ensaio if contrato else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Duração:</label>
+      <input type="text" name="duracao_ensaio" class="form-control" placeholder="ex: 2h" value="{{ contrato.duracao_ensaio if contrato else '' }}">
+    </div>
+  {% elif tipo == 'evento' %}
+    <div class="col-md-8">
+      <label class="form-label">Nome do evento:</label>
+      <input type="text" name="nome_evento" class="form-control" value="{{ contrato.nome_evento if contrato else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Data do evento:</label>
+      <input type="date" name="data_evento" class="form-control" value="{{ contrato.data_evento if contrato else '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Horário:</label>
+      <input type="time" name="horario_evento" class="form-control" value="{{ contrato.horario_evento if contrato else '' }}">
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Local:</label>
+      <input type="text" name="local_evento" class="form-control" value="{{ contrato.local_evento if contrato else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cidade/Estado:</label>
+      <input type="text" name="cidade_estado_evento" class="form-control" value="{{ contrato.cidade_estado_evento if contrato else '' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Cobertura:</label>
+      <input type="text" name="tempo_cobertura" class="form-control" placeholder="ex: até 4h" value="{{ contrato.tempo_cobertura if contrato else '' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Fotógrafos:</label>
+      <input type="number" name="qtd_fotografos" class="form-control" value="{{ contrato.qtd_fotografos if contrato else '' }}">
+    </div>
+  {% endif %}
 
-        {% if tipo == 'ensaio' %}
-            <label>Data do ensaio:</label>
-            <input type="date" name="data_ensaio" required><br>
+  <div class="col-12">
+    <label class="form-label">Descrição do serviço:</label>
+    <textarea name="descricao_servico" rows="3" class="form-control">{{ contrato.descricao_servico if contrato else '' }}</textarea>
+  </div>
 
-            <label>Horário:</label>
-            <input type="time" name="horario_ensaio" required><br>
+  <div class="col-md-6">
+    <label class="form-label">Valor:</label>
+    <input type="text" name="valor" class="form-control" value="{{ contrato.valor if contrato else '' }}">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Forma de pagamento:</label>
+    <textarea name="forma_pagamento" rows="2" class="form-control">{{ contrato.forma_pagamento if contrato else '' }}</textarea>
+  </div>
 
-            <label>Local:</label>
-            <input type="text" name="local_ensaio" required><br>
-
-            <label>Cidade/Estado:</label>
-            <input type="text" name="cidade_estado_ensaio" required><br>
-
-            <label>Duração:</label>
-            <input type="text" name="duracao_ensaio" placeholder="ex: 2h" required><br>
-        {% elif tipo == 'evento' %}
-            <label>Nome do evento:</label>
-            <input type="text" name="nome_evento" required><br>
-
-            <label>Data do evento:</label>
-            <input type="date" name="data_evento" required><br>
-
-            <label>Horário:</label>
-            <input type="time" name="horario_evento" required><br>
-
-            <label>Local:</label>
-            <input type="text" name="local_evento" required><br>
-
-            <label>Cidade/Estado:</label>
-            <input type="text" name="cidade_estado_evento" required><br>
-
-            <label>Tempo de cobertura:</label>
-            <input type="text" name="tempo_cobertura" placeholder="ex: até 4h" required><br>
-
-            <label>Quantidade de fotógrafos:</label>
-            <input type="number" name="qtd_fotografos" required><br>
-        {% endif %}
-
-        <label>Descrição do serviço:</label><br>
-        <textarea name="descricao_servico" rows="4" cols="50" required></textarea><br>
-
-        <label>Valor:</label>
-        <input type="text" name="valor" required><br>
-
-        <label>Forma de pagamento:</label><br>
-        <textarea name="forma_pagamento" rows="2" cols="50" required></textarea><br>
-
-        <button type="submit">Salvar contrato</button>
-    </form>
-</body>
-</html>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">{{ contrato and 'Atualizar' or 'Salvar' }} contrato</button>
+    <a href="/contratos" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block conteudo %}
+<h2 class="mb-4">Editar Cliente</h2>
+<form method="POST" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Nome completo:</label>
+    <input type="text" name="nome" class="form-control" value="{{ cliente.nome }}" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">CPF:</label>
+    <input type="text" name="cpf" class="form-control" value="{{ cliente.cpf }}" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Email:</label>
+    <input type="email" name="email" class="form-control" value="{{ cliente.email }}">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">WhatsApp:</label>
+    <input type="text" name="whatsapp" class="form-control" value="{{ cliente.whatsapp }}">
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Atualizar</button>
+    <a href="/clientes/listar" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

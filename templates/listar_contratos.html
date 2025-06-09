@@ -18,7 +18,11 @@
       <td>{{ contrato.tipo }}</td>
       <td>{{ contrato.data_criacao.strftime('%d/%m/%Y') }}</td>
       <td>
-        <a href="{{ url_for('visualizar_contrato', id=contrato.id) }}" class="btn btn-sm btn-secondary">Visualizar</a>
+        <a href="{{ url_for('visualizar_contrato', id=contrato.id) }}" class="btn btn-sm btn-secondary" target="_blank">Visualizar</a>
+        <a href="{{ url_for('editar_contrato', id=contrato.id) }}" class="btn btn-sm btn-warning">Editar</a>
+        <form action="{{ url_for('excluir_contrato', id=contrato.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este contrato?');">
+          <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+        </form>
       </td>
     </tr>
     {% endfor %}
