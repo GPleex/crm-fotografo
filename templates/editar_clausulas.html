@@ -12,15 +12,16 @@
     {% set numero_id = numero.replace('ª', '').replace('º', '') %}
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><strong>Cláusula {{ numero }}:</strong> {{ texto[:60] | striptags }}...</span>
+        <span><strong>Cláusula {{ numero }}:</strong> {{ texto[:60]|striptags }}...</span>
         <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleEditor('{{ numero_id }}')">Editar</button>
       </div>
-      <div class="card-body" id="editor_{{ numero_id }}" style="display: none;">
+      <div class="card-body" id="editor_{{ numero_id }}" hidden>
         <input type="hidden" id="clausula_{{ numero_id }}_input" name="clausula_{{ numero }}">
         <div id="trix_wrapper_{{ numero_id }}"></div>
       </div>
     </div>
   {% endfor %}
+
   <div class="mt-4">
     <button type="submit" class="btn btn-success">Salvar alterações</button>
     <a href="{{ url_for('visualizar_contrato', id=contrato.id) }}" class="btn btn-secondary">Cancelar</a>
@@ -34,39 +35,45 @@
 <script>
   function toggleEditor(numero) {
     const editor = document.getElementById("editor_" + numero);
-    editor.style.display = (editor.style.display === "none") ? "block" : "none";
+    if (editor) editor.hidden = !editor.hidden;
   }
 
   function expandirTudo() {
     {% for numero in clausulas.keys() %}
-      document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}").style.display = "block";
+      const el = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
+      if (el) el.hidden = false;
     {% endfor %}
   }
 
   function colapsarTudo() {
     {% for numero in clausulas.keys() %}
-      document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}").style.display = "none";
+      const el = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
+      if (el) el.hidden = true;
     {% endfor %}
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    {% for c in contrato.clausulas_personalizadas %}
-      toggleEditor('{{ c.clausula_numero.replace("ª", "").replace("º", "") }}');
-    {% endfor %}
-
     {% for numero, texto in clausulas.items() %}
       {% set numero_id = numero.replace('ª', '').replace('º', '') %}
       {% set personalizado = (contrato.clausulas_personalizadas
-          | selectattr('clausula_numero', 'equalto', numero)
-          | map(attribute='conteudo') | list | first) %}
+        | selectattr('clausula_numero', 'equalto', numero)
+        | map(attribute='conteudo') | list | first) %}
       {% set conteudo = personalizado if personalizado else texto %}
-      var input = document.getElementById("clausula_{{ numero_id }}_input");
+
+      const input = document.getElementById("clausula_{{ numero_id }}_input");
       input.value = {{ conteudo | tojson | safe }};
-      var wrapper = document.getElementById("trix_wrapper_{{ numero_id }}");
-      var editor = document.createElement("trix-editor");
+
+      const wrapper = document.getElementById("trix_wrapper_{{ numero_id }}");
+      const editor = document.createElement("trix-editor");
       editor.setAttribute("input", input.id);
       editor.className = "form-control";
       wrapper.appendChild(editor);
+    {% endfor %}
+
+    // Expandir cláusulas já personalizadas
+    {% for c in contrato.clausulas_personalizadas %}
+      const el = document.getElementById("editor_{{ c.clausula_numero.replace('ª', '').replace('º', '') }}");
+      if (el) el.hidden = false;
     {% endfor %}
   });
 </script>
