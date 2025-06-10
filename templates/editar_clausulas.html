@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+
 {% block conteudo %}
 <h2 class="mb-4">Editar Cláusulas Personalizadas</h2>
 
@@ -10,14 +11,20 @@
 <form method="POST">
   {% for numero, texto in clausulas.items() %}
     {% set numero_id = numero.replace('ª', '').replace('º', '') %}
+    {% set personalizado = (
+        contrato.clausulas_personalizadas
+        | selectattr('clausula_numero', 'equalto', numero)
+        | map(attribute='conteudo') | list | first) %}
+    {% set conteudo = personalizado if personalizado else texto %}
+
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><strong>Cláusula {{ numero }}:</strong> {{ texto[:60]|striptags }}...</span>
+        <span><strong>{{ numero }}:</strong> {{ texto[:60] | striptags }}...</span>
         <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleEditor('{{ numero_id }}')">Editar</button>
       </div>
-      <div class="card-body" id="editor_{{ numero_id }}" hidden>
+      <div class="card-body d-none" id="editor_{{ numero_id }}">
         <input type="hidden" id="clausula_{{ numero_id }}_input" name="clausula_{{ numero }}">
-        <div id="trix_wrapper_{{ numero_id }}"></div>
+        <trix-editor input="clausula_{{ numero_id }}_input" class="form-control"></trix-editor>
       </div>
     </div>
   {% endfor %}
@@ -28,52 +35,59 @@
   </div>
 </form>
 
-<!-- Trix Editor -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/trix/2.0.0/trix.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/trix/2.0.0/trix.min.js"></script>
+{% endblock %}
 
+{% block scripts %}
 <script>
   function toggleEditor(numero) {
     const editor = document.getElementById("editor_" + numero);
-    if (editor) editor.hidden = !editor.hidden;
+    if (editor) {
+      editor.classList.toggle("d-none");
+    }
   }
 
   function expandirTudo() {
     {% for numero in clausulas.keys() %}
-      const el = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
-      if (el) el.hidden = false;
+      const ed_{{ loop.index }} = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
+      if (ed_{{ loop.index }}) ed_{{ loop.index }}.classList.remove("d-none");
     {% endfor %}
   }
 
   function colapsarTudo() {
     {% for numero in clausulas.keys() %}
-      const el = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
-      if (el) el.hidden = true;
+      const ed_{{ loop.index }} = document.getElementById("editor_{{ numero.replace('ª', '').replace('º', '') }}");
+      if (ed_{{ loop.index }}) ed_{{ loop.index }}.classList.add("d-none");
     {% endfor %}
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    {% for numero, texto in clausulas.items() %}
-      {% set numero_id = numero.replace('ª', '').replace('º', '') %}
-      {% set personalizado = (contrato.clausulas_personalizadas
-        | selectattr('clausula_numero', 'equalto', numero)
-        | map(attribute='conteudo') | list | first) %}
-      {% set conteudo = personalizado if personalizado else texto %}
+    // Coleta os dados em um array JavaScript
+    const clausulasData = [
+      {% for numero, texto in clausulas.items() %}
+        {% set numero_id = numero.replace('ª', '').replace('º', '') %}
+        {% set personalizado = (
+            contrato.clausulas_personalizadas
+            | selectattr('clausula_numero', 'equalto', numero)
+            | map(attribute='conteudo') | list | first) %}
+        {% set conteudo = personalizado if personalizado else texto %}
+        {
+          numero_id: "{{ numero_id }}",
+          conteudo: {{ conteudo | tojson | safe }}
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
 
-      const input = document.getElementById("clausula_{{ numero_id }}_input");
-      input.value = {{ conteudo | tojson | safe }};
+    // Itera sobre o array para definir os valores
+    clausulasData.forEach(function(item) {
+      const input = document.getElementById("clausula_" + item.numero_id + "_input");
+      if (input) {
+        input.value = item.conteudo;
+      }
+    });
 
-      const wrapper = document.getElementById("trix_wrapper_{{ numero_id }}");
-      const editor = document.createElement("trix-editor");
-      editor.setAttribute("input", input.id);
-      editor.className = "form-control";
-      wrapper.appendChild(editor);
-    {% endfor %}
-
-    // Expandir cláusulas já personalizadas
     {% for c in contrato.clausulas_personalizadas %}
       const el = document.getElementById("editor_{{ c.clausula_numero.replace('ª', '').replace('º', '') }}");
-      if (el) el.hidden = false;
+      if (el) el.classList.remove("d-none");
     {% endfor %}
   });
 </script>

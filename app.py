@@ -1,10 +1,9 @@
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for, flash, render_template_string
 from markupsafe import Markup
 from flask_sqlalchemy import SQLAlchemy
-from flask import render_template, request, redirect, url_for, flash, render_template_string
-import os
 from datetime import datetime
 from clausulas_padrao import clausulas_por_tipo
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123456'
@@ -229,36 +228,34 @@ from flask import render_template_string
 @app.route("/contrato/<int:id>/editar_clausulas", methods=["GET", "POST"])
 def editar_clausulas(id):
     contrato = Contrato.query.get_or_404(id)
+    tipo = contrato.tipo
+    clausulas = clausulas_por_tipo.get(tipo, {})
 
     if request.method == "POST":
-        selecionadas = request.form.getlist("clausulas")
-        for numero in selecionadas:
-            conteudo_editado = request.form.get(f"clausula_{numero}")
-            existente = ClausulaPersonalizada.query.filter_by(contrato_id=id, clausula_numero=numero).first()
-            if existente:
-                existente.conteudo = conteudo_editado
-            else:
-                nova = ClausulaPersonalizada(
-                    contrato_id=id,
-                    clausula_numero=numero,
-                    conteudo=conteudo_editado
-                )
-                db.session.add(nova)
+        for numero in clausulas.keys():
+            conteudo = request.form.get(f"clausula_{numero}")
+            if conteudo:
+                # Buscar cláusula existente
+                clausula = ClausulaPersonalizada.query.filter_by(
+                    contrato_id=contrato.id,
+                    clausula_numero=numero
+                ).first()
+
+                if clausula:
+                    clausula.conteudo = conteudo
+                else:
+                    nova = ClausulaPersonalizada(
+                        contrato_id=contrato.id,
+                        clausula_numero=numero,
+                        conteudo=conteudo
+                    )
+                    db.session.add(nova)
+
         db.session.commit()
-        flash("Cláusulas personalizadas salvas com sucesso!", "success")
-        return redirect(url_for("visualizar_contrato", id=id))
+        flash("Cláusulas atualizadas com sucesso!", "success")
+        return redirect(url_for("visualizar_contrato", id=contrato.id))
 
-    clausulas_base = clausulas_por_tipo.get(contrato.tipo, {})
-    clausulas_renderizadas = {
-        numero: render_template_string(template, contrato=contrato)
-        for numero, template in clausulas_base.items()
-    }
-
-    return render_template(
-        "editar_clausulas.html",
-        contrato=contrato,
-        clausulas=clausulas_renderizadas
-    )
+    return render_template("editar_clausulas.html", contrato=contrato, clausulas=clausulas)
 
 # Filtro para formatar data por extenso 
 @app.template_filter('data_por_extenso')
