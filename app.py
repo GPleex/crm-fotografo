@@ -200,33 +200,34 @@ def listar_contratos():
     contratos = Contrato.query.filter_by(usuario_id=current_user.id).order_by(Contrato.data_criacao.desc()).all()
     return render_template("listar_contratos.html", contratos=contratos)
 
+@app.route("/contrato/novo", methods=["GET", "POST"])
+@app.route("/contrato/<int:id>/editar", methods=["GET", "POST"])
 @login_required
-@app.route("/contrato/novo/<tipo>", methods=["GET", "POST"])
-def novo_contrato(tipo):
-    if tipo not in ['evento', 'ensaio']:
-        return redirect(url_for('home'))
-
-    clientes = Cliente.query.order_by(Cliente.nome).all()
+def contrato_form(id=None):
+    contrato = Contrato.query.get_or_404(id) if id else None
+    clientes = Cliente.query.filter_by(usuario_id=current_user.id).order_by(Cliente.nome).all()
 
     if request.method == "POST":
-        cliente_id = request.form["cliente_id"]
+        tipo = request.form.get("tipo")
+        cliente_id = request.form.get("cliente_id")
 
-        contrato = Contrato(
-            tipo=tipo,
-            cliente_id=cliente_id,
-            usuario_id=current_user.id,
-            descricao_servico=request.form.get("descricao_servico"),
-            valor=request.form.get("valor"),
-            forma_pagamento=request.form.get("forma_pagamento"),
-        )
+        if not contrato:
+            contrato = Contrato(tipo=tipo, cliente_id=cliente_id, usuario_id=current_user.id)
+            db.session.add(contrato)
 
-        if tipo == "ensaio":
+        contrato.cliente_id = cliente_id
+        contrato.tipo = request.form.get("tipo")
+        contrato.descricao_servico = request.form.get("descricao_servico")
+        contrato.valor = request.form.get("valor")
+        contrato.forma_pagamento = request.form.get("forma_pagamento")
+
+        if contrato.tipo == "ensaio":
             contrato.data_ensaio = request.form.get("data_ensaio")
             contrato.horario_ensaio = request.form.get("horario_ensaio")
             contrato.local_ensaio = request.form.get("local_ensaio")
             contrato.cidade_estado_ensaio = request.form.get("cidade_estado_ensaio")
             contrato.duracao_ensaio = request.form.get("duracao_ensaio")
-        else:  # evento
+        elif contrato.tipo == "evento":
             contrato.nome_evento = request.form.get("nome_evento")
             contrato.data_evento = request.form.get("data_evento")
             contrato.horario_evento = request.form.get("horario_evento")
@@ -235,13 +236,17 @@ def novo_contrato(tipo):
             contrato.tempo_cobertura = request.form.get("tempo_cobertura")
             contrato.qtd_fotografos = request.form.get("qtd_fotografos")
 
-        db.session.add(contrato)
         db.session.commit()
 
-        flash("Contrato criado com sucesso!", "success")
+        flash("Contrato salvo com sucesso!", "success")
         return redirect(url_for("visualizar_contrato", id=contrato.id))
 
-    return render_template("contrato_form.html", tipo=tipo, clientes=clientes)
+    return render_template(
+        "contrato_form.html",
+        contrato=contrato,
+        tipo=contrato.tipo if contrato else "ensaio",  # valor padrão
+        clientes=clientes
+    )
 
 @app.route('/contrato/<int:id>')
 @login_required

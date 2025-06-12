@@ -1,8 +1,18 @@
 {% extends 'layout.html' %}
 {% block conteudo %}
-<h2 class="mb-4">{{ contrato and 'Editar' or 'Novo' }} Contrato de {{ tipo|capitalize }}</h2>
+<h2 class="mb-4">{{ contrato and 'Editar' or 'Novo' }} Contrato</h2>
+
 <form method="POST" class="row g-3">
-  <div class="col-12">
+  <div class="col-md-6">
+    <label class="form-label">Tipo de contrato:</label>
+    <select name="tipo" id="tipo" class="form-select" required onchange="mostrarCampos()">
+      <option value="">Selecione</option>
+      <option value="ensaio" {% if tipo == 'ensaio' %}selected{% endif %}>Ensaio</option>
+      <option value="evento" {% if tipo == 'evento' %}selected{% endif %}>Evento</option>
+    </select>
+  </div>
+
+  <div class="col-md-6">
     <label class="form-label">Cliente:</label>
     <select name="cliente_id" class="form-select" required>
       {% for cliente in clientes %}
@@ -13,7 +23,8 @@
     </select>
   </div>
 
-  {% if tipo == 'ensaio' %}
+  <!-- Campos ENSAIO -->
+  <div id="campos_ensaio" style="display: none;">
     <div class="col-md-6">
       <label class="form-label">Data do ensaio:</label>
       <input type="date" name="data_ensaio" class="form-control" value="{{ contrato.data_ensaio if contrato else '' }}">
@@ -34,7 +45,10 @@
       <label class="form-label">Duração:</label>
       <input type="text" name="duracao_ensaio" class="form-control" placeholder="ex: 2h" value="{{ contrato.duracao_ensaio if contrato else '' }}">
     </div>
-  {% elif tipo == 'evento' %}
+  </div>
+
+  <!-- Campos EVENTO -->
+  <div id="campos_evento" style="display: none;">
     <div class="col-md-8">
       <label class="form-label">Nome do evento:</label>
       <input type="text" name="nome_evento" class="form-control" value="{{ contrato.nome_evento if contrato else '' }}">
@@ -63,7 +77,7 @@
       <label class="form-label">Fotógrafos:</label>
       <input type="number" name="qtd_fotografos" class="form-control" value="{{ contrato.qtd_fotografos if contrato else '' }}">
     </div>
-  {% endif %}
+  </div>
 
   <div class="col-12">
     <label class="form-label">Descrição do serviço:</label>
@@ -81,7 +95,17 @@
 
   <div class="col-12">
     <button type="submit" class="btn btn-primary">{{ contrato and 'Atualizar' or 'Salvar' }} contrato</button>
-    <a href="/contratos" class="btn btn-secondary">Cancelar</a>
+    <a href="{{ url_for('listar_contratos') }}" class="btn btn-secondary">Cancelar</a>
   </div>
 </form>
+
+<script>
+  function mostrarCampos() {
+    const tipo = document.getElementById('tipo').value;
+    document.getElementById('campos_ensaio').style.display = tipo === 'ensaio' ? 'block' : 'none';
+    document.getElementById('campos_evento').style.display = tipo === 'evento' ? 'block' : 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', mostrarCampos);
+</script>
 {% endblock %}
