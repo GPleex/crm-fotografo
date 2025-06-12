@@ -3,10 +3,20 @@ from markupsafe import Markup
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from clausulas_padrao import clausulas_por_tipo
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123456'
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Nome da função de login
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
 
 # Configurar SQLite com caminho absoluto
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -25,12 +35,28 @@ class Cliente(db.Model):
     cpf = db.Column(db.String(14), unique=True, nullable=False)
     email = db.Column(db.String(100))
     whatsapp = db.Column(db.String(20))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+
+# Modelo de usuário para autenticação
+class Usuario(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    senha_hash = db.Column(db.String(128), nullable=False)  # Corrigir aqui
+
+    def set_senha(self, senha):
+        self.senha_hash = generate_password_hash(senha)
+
+    def verificar_senha(self, senha):
+        return check_password_hash(self.senha_hash, senha)
+
 
 # Modelo de contrato que pode ser de evento ou ensaio
 class Contrato(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tipo = db.Column(db.String(20))  # 'evento' ou 'ensaio'
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
+    tipo = db.Column(db.String(20))  # 'ensaio' ou 'evento'
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Campos comuns
@@ -58,9 +84,9 @@ class Contrato(db.Model):
 
 class ClausulaPersonalizada(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    contrato_id = db.Column(db.Integer, db.ForeignKey('contrato.id'), nullable=False)
-    clausula_numero = db.Column(db.String(10), nullable=False)  # Ex: '4ª', '7ª'
-    conteudo = db.Column(db.Text, nullable=False)
+    contrato_id = db.Column(db.Integer, db.ForeignKey('contrato.id'))
+    clausula_numero = db.Column(db.String(10))
+    conteudo = db.Column(db.Text)
 
     contrato = db.relationship('Contrato', backref=db.backref('clausulas_personalizadas', lazy=True))
 
@@ -69,24 +95,65 @@ class ClausulaPersonalizada(db.Model):
 def home():
     return render_template("home.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        senha = request.form["senha"]
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario and usuario.verificar_senha(senha):
+            login_user(usuario)
+            flash("Login realizado com sucesso!", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Credenciais inválidas", "danger")
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Você saiu da sessão.", "info")
+    return redirect(url_for("login"))
+
+@app.route("/registrar", methods=["GET", "POST"])
+def registrar():
+    if request.method == "POST":
+        nome = request.form["nome"]
+        email = request.form["email"]
+        senha = request.form["senha"]
+        if Usuario.query.filter_by(email=email).first():
+            flash("E-mail já cadastrado", "warning")
+        else:
+            usuario = Usuario(nome=nome, email=email)
+            usuario.set_senha(senha)
+            db.session.add(usuario)
+            db.session.commit()
+            flash("Cadastro realizado!", "success")
+            return redirect(url_for("login"))
+    return render_template("registrar.html")
+
 @app.route("/clientes")
+@login_required
 def listar_clientes():
-    clientes = Cliente.query.order_by(Cliente.nome).all()
+    clientes = Cliente.query.filter_by(usuario_id=current_user.id).order_by(Cliente.nome).all()
     return render_template("listar_clientes.html", clientes=clientes)
 
 @app.route("/clientes/novo", methods=["GET", "POST"])
+@login_required
 def cadastrar_cliente():
     if request.method == "POST":
         nome = request.form["nome"]
         cpf = request.form["cpf"]
         email = request.form["email"]
         whatsapp = request.form["whatsapp"]
+        usuario_id=current_user.id
 
         if Cliente.query.filter_by(cpf=cpf).first():
             flash("CPF já cadastrado!", "error")
             return redirect(url_for("cadastrar_cliente"))
 
-        cliente = Cliente(nome=nome, cpf=cpf, email=email, whatsapp=whatsapp)
+        cliente = Cliente(nome=nome, cpf=cpf, email=email, whatsapp=whatsapp, usuario_id=current_user.id)
         db.session.add(cliente)
         db.session.commit()
         flash("Cliente cadastrado com sucesso!", "success")
@@ -96,6 +163,7 @@ def cadastrar_cliente():
 
 
 @app.route('/cliente/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
 def editar_cliente(id):
     cliente = Cliente.query.get_or_404(id)
 
@@ -112,6 +180,7 @@ def editar_cliente(id):
 
 
 @app.route('/cliente/<int:id>/excluir', methods=['POST'])
+@login_required
 def excluir_cliente(id):
     cliente = Cliente.query.get_or_404(id)
 
@@ -126,10 +195,12 @@ def excluir_cliente(id):
 
 
 @app.route("/contratos")
+@login_required
 def listar_contratos():
-    contratos = Contrato.query.order_by(Contrato.data_criacao.desc()).all()
+    contratos = Contrato.query.filter_by(usuario_id=current_user.id).order_by(Contrato.data_criacao.desc()).all()
     return render_template("listar_contratos.html", contratos=contratos)
 
+@login_required
 @app.route("/contrato/novo/<tipo>", methods=["GET", "POST"])
 def novo_contrato(tipo):
     if tipo not in ['evento', 'ensaio']:
@@ -143,9 +214,10 @@ def novo_contrato(tipo):
         contrato = Contrato(
             tipo=tipo,
             cliente_id=cliente_id,
+            usuario_id=current_user.id,
             descricao_servico=request.form.get("descricao_servico"),
             valor=request.form.get("valor"),
-            forma_pagamento=request.form.get("forma_pagamento")
+            forma_pagamento=request.form.get("forma_pagamento"),
         )
 
         if tipo == "ensaio":
@@ -172,6 +244,7 @@ def novo_contrato(tipo):
     return render_template("contrato_form.html", tipo=tipo, clientes=clientes)
 
 @app.route('/contrato/<int:id>')
+@login_required
 def visualizar_contrato(id):
     contrato = Contrato.query.get_or_404(id)
     cliente = contrato.cliente
@@ -184,6 +257,7 @@ def visualizar_contrato(id):
     return render_template("contrato_visualizacao.html", contrato_conteudo=Markup(html_contrato))
 
 @app.route("/contrato/<int:id>/editar", methods=["GET", "POST"])
+@login_required
 def editar_contrato(id):
     contrato = Contrato.query.get_or_404(id)
     clientes = Cliente.query.order_by(Cliente.nome).all()
@@ -216,6 +290,7 @@ def editar_contrato(id):
     return render_template("contrato_form.html", contrato=contrato, tipo=contrato.tipo, clientes=clientes)
 
 @app.route("/contrato/<int:id>/excluir", methods=["POST"])
+@login_required
 def excluir_contrato(id):
     contrato = Contrato.query.get_or_404(id)
     db.session.delete(contrato)
@@ -223,9 +298,8 @@ def excluir_contrato(id):
     flash("Contrato excluído com sucesso!", "success")
     return redirect(url_for("listar_contratos"))
 
-from flask import render_template_string
-
 @app.route("/contrato/<int:id>/editar_clausulas", methods=["GET", "POST"])
+@login_required
 def editar_clausulas(id):
     contrato = Contrato.query.get_or_404(id)
     tipo = contrato.tipo
