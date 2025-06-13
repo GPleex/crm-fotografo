@@ -20,7 +20,9 @@
 </head>
 <body>
   <div id="sidebar">
-    <h4 class="text-center">{{ current_user.nome }}</h4>
+    <a class="navbar-brand" href="{{ url_for('home') }}" >
+      <h4 class="text-center">{{ current_user.nome }}</h4>
+    </a>
     <hr>
     <div class="accordion" id="sidebarMenu">
 
