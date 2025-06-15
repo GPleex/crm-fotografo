@@ -6,7 +6,8 @@
       <th>ID</th>
       <th>Cliente</th>
       <th>Tipo</th>
-      <th>Data</th>
+      <th>Data do contrato</th>
+      <th>Data do evento</th>
       <th>Ações</th>
     </tr>
   </thead>
@@ -18,8 +19,15 @@
       <td>{{ contrato.tipo }}</td>
       <td>{{ contrato.data_criacao.strftime('%d/%m/%Y') }}</td>
       <td>
+        {% if contrato.tipo == "evento" %}
+          {{ contrato.data_evento.strftime('%d/%m/%Y') if contrato.data_evento else 'Sem data' }}
+        {% else %}
+          {{ contrato.data_ensaio.strftime('%d/%m/%Y') if contrato.data_ensaio else 'Sem data' }}
+        {% endif %}
+      </td>      
+      <td>
         <a href="{{ url_for('visualizar_contrato', id=contrato.id) }}" class="btn btn-sm btn-secondary" target="_blank">Visualizar</a>
-        <a href="{{ url_for('editar_contrato', id=contrato.id) }}" class="btn btn-sm btn-warning">Editar</a>
+        <a href="{{ url_for('contrato_form', id=contrato.id) }}" class="btn btn-sm btn-warning">Editar</a>
         <form action="{{ url_for('excluir_contrato', id=contrato.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este contrato?');">
           <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
         </form>

@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block conteudo %}
+<div class="container mt-5">
+  <h2 class="mb-4">Configurações</h2>
+  
+  <!-- Seção: Editar Cadastro -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Editar Cadastro
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('configuracoes') }}">
+        <input type="hidden" name="action" value="editar">
+        <div class="mb-3">
+          <label class="form-label">Nome</label>
+          <input type="text" name="nome" class="form-control" value="{{ current_user.nome }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input type="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Seção: Alterar Senha -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Alterar Senha
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('configuracoes') }}">
+        <input type="hidden" name="action" value="alterar_senha">
+        <div class="mb-3">
+          <label class="form-label">Senha Atual</label>
+          <input type="password" name="senha_atual" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nova Senha</label>
+          <input type="password" name="nova_senha" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar Nova Senha</label>
+          <input type="password" name="confirmar_nova_senha" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-warning">Alterar Senha</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Seção: Atualizar Foto de Perfil -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Atualizar Foto de Perfil
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('configuracoes') }}" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload_foto">
+        <div class="mb-3">
+          <label class="form-label">Selecione uma nova foto</label>
+          <input type="file" name="foto" class="form-control" accept="image/*" required>
+        </div>
+        <button type="submit" class="btn btn-info">Atualizar Foto</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Seção: Excluir Perfil -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Excluir Perfil
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('configuracoes') }}" onsubmit="return confirm('Tem certeza que deseja excluir seu perfil? Esta ação não pode ser desfeita.');">
+        <input type="hidden" name="action" value="excluir_perfil">
+        <button type="submit" class="btn btn-danger">Excluir Perfil</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

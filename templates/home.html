@@ -1,5 +1,48 @@
 {% extends 'layout.html' %}
 {% block conteudo %}
+
 <h2 class="mb-4">Bem-vindo ao CRM Fotógrafo</h2>
-<p class="lead">Use o menu à esquerda para navegar pelo sistema.</p>
+
+<!-- Painel Informativo -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Total de Contratos</div>
+            <div class="card-body">
+                <h3 class="card-title">{{ total_contratos }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Faturamento Total</div>
+            <div class="card-body">
+                <h3 class="card-title">R$ {{ "%.2f"|format(faturamento) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agenda de Eventos e Ensaios -->
+<h3 class="mb-3">Próximos Eventos e Ensaios</h3>
+{% if agenda %}
+<div class="list-group">
+    {% for item in agenda %}
+    <a href="{{ url_for('visualizar_contrato', id=item.obj.id) }}" class="list-group-item list-group-item-action {% if item.highlight %}list-group-item-warning{% endif %}">
+        {% if item.tipo == 'evento' %}
+            📅 <strong>{{ item.obj.nome_evento }}</strong>
+        {% else %}
+            📷 <strong>Ensaio</strong>
+        {% endif %}
+         - {{ item.data.strftime('%d/%m/%Y') }}
+        {% if item.highlight %}
+        <span class="badge bg-danger ms-2">Próximo</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p>Sem compromissos agendados.</p>
+{% endif %}
+
 {% endblock %}

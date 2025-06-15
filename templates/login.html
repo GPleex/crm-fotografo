@@ -2,6 +2,7 @@
 {% block conteudo %}
 <div class="container mt-5" style="max-width: 400px;">
   <h3 class="mb-4 text-center">Login</h3>
+  <!-- Seu formulário de login -->
   <form method="POST">
     <div class="mb-3">
       <label class="form-label">Email</label>
@@ -13,7 +14,9 @@
     </div>
     <button type="submit" class="btn btn-primary w-100">Entrar</button>
   </form>
-
+  <p class="text-center mt-3">
+    <a href="{{ url_for('forgot_password') }}">Esqueci minha senha?</a>
+  </p>
   <p class="text-center mt-3">
     Não tem uma conta? <a href="{{ url_for('registrar') }}">Registrar-se</a>
   </p>

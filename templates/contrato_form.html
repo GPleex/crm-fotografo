@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block conteudo %}
-<h2 class="mb-4 text-center">{{ contrato and 'Editar' or 'Novo' }} Contrato</h2>
+<h2 class="mb-4 text-center">{{ 'Editar' if contrato else 'Novo' }} Contrato</h2>
 
 <style>
   .form-control:focus, .form-select:focus {
@@ -8,7 +8,6 @@
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     transition: all 0.2s;
   }
-
   @media (min-width: 768px) {
     .form-wrapper {
       max-width: 900px;
@@ -40,107 +39,123 @@
       </select>
     </div>
     <div class="col-md-4">
-        <label class="form-label">Valor:</label>
-        <div class="input-group">
-          <span class="input-group-text">R$</span>
-          <input type="text" name="valor" id="valor" class="form-control" 
-                value="{{ contrato.valor if contrato else '' }}" placeholder="0,00">
-        </div>
+      <label class="form-label">Valor:</label>
+      <div class="input-group">
+        <span class="input-group-text">R$</span>
+        <input type="text" name="valor" id="valor" class="form-control"
+               value="{{ contrato.valor or '' }}" placeholder="0,00">
+      </div>
     </div>
   </div>
-
-  <!-- Campos ENSAIO -->
+  
+  <!-- Para Ensaios: Exibir selects de Estado e Cidade -->
+  {% if tipo == "ensaio" %}
+  <div class="row mb-3">
+    <div class="mb-3 col-md-6">
+      <label class="form-label">Estado:</label>
+      <select id="uf" name="uf" class="form-select" required
+        data-estado="{{ contrato.estado_ensaio or '' }}">
+      </select>
+    </div>
+    <div class="mb-3 col-md-6">
+      <label class="form-label">Cidade:</label>
+      <select id="city" name="cidade_estado" class="form-select" required
+        data-cidade="{{ contrato.cidade_ensaio or '' }}">
+      </select>
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Bloco de campos específicos para ensaio -->
   <div id="campos_ensaio" style="display: none;">
     <div class="row mb-3">
       <div class="col-md-4">
         <label class="form-label">Data do ensaio:</label>
-        <input type="date" name="data_ensaio" class="form-control" value="{{ contrato.data_ensaio if contrato else '' }}">
+        <input type="date" name="data_ensaio" class="form-control" value="{{ contrato.data_ensaio or '' }}">
       </div>
       <div class="col-md-4">
         <label class="form-label">Horário:</label>
-        <input type="time" name="horario_ensaio" class="form-control" value="{{ contrato.horario_ensaio if contrato else '' }}">
+        <input type="time" name="horario_ensaio" class="form-control" value="{{ contrato.horario_ensaio or '' }}">
       </div>
       <div class="col-md-4">
         <label class="form-label">Duração:</label>
-        <input type="text" name="duracao_ensaio" class="form-control" placeholder="ex: 2h" value="{{ contrato.duracao_ensaio if contrato else '' }}">
-      </div>
-    </div>
-    <div class="row mb-3">
-      <div class="col-md-4">
-        <label class="form-label">Local:</label>
-        <input type="text" name="local_ensaio" class="form-control" value="{{ contrato.local_ensaio if contrato else '' }}">
-      </div>
-      <div class="mb-3 col-md-4">
-        <label class="form-label">Estado:</label>
-        <select id="uf" name="uf" class="form-select" required></select>
-      </div>
-      <div class="mb-3 col-md-4">
-        <label class="form-label">Cidade:</label>
-        <select id="city" name="cidade_estado" class="form-select" required></select>
+        <input type="text" name="duracao_ensaio" class="form-control" placeholder="ex: 2h" value="{{ contrato.duracao_ensaio or '' }}">
       </div>
     </div>
   </div>
-
-  <!-- Campos EVENTO -->
+  
+  <!-- Bloco de campos específicos para evento -->
   <div id="campos_evento" style="display: none;">
     <div class="row mb-3">
       <div class="col-12">
         <label class="form-label">Nome do evento:</label>
-        <input type="text" name="nome_evento" class="form-control" value="{{ contrato.nome_evento if contrato else '' }}">
+        <input type="text" name="nome_evento" class="form-control" value="{{ contrato.nome_evento or '' }}">
       </div>
     </div>
     <div class="row mb-3">
       <div class="col-md-3">
         <label class="form-label">Data do evento:</label>
-        <input type="date" name="data_evento" class="form-control" value="{{ contrato.data_evento if contrato else '' }}">
+        <input type="date" name="data_evento" class="form-control" value="{{ contrato.data_evento or '' }}">
       </div>
       <div class="col-md-3">
         <label class="form-label">Horário:</label>
-        <input type="time" name="horario_evento" class="form-control" value="{{ contrato.horario_evento if contrato else '' }}">
+        <input type="time" name="horario_evento" class="form-control" value="{{ contrato.horario_evento or '' }}">
       </div>
-      <div class="mb-3 col-md-3">
-        <label class="form-label">Estado:</label>
-        <select id="uf" name="uf" class="form-select" required></select>
-      </div>
-      <div class="mb-3 col-md-3">
-        <label class="form-label">Cidade:</label>
-        <select id="city" name="cidade_estado" class="form-select" required></select>
-      </div>
-    </div>
-    <div class="row mb-3">
       <div class="col-md-3">
-        <label class="form-label">Local:</label>
-        <input type="text" name="local_evento" class="form-control" value="{{ contrato.local_evento if contrato else '' }}">
+        <label class="form-label">Tempo de cobertura:</label>
+        <input type="text" name="tempo_cobertura" class="form-control" placeholder="ex: até 4h" value="{{ contrato.tempo_cobertura or '' }}">
       </div>
-    </div>
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label class="form-label">Cobertura:</label>
-        <input type="text" name="tempo_cobertura" class="form-control" placeholder="ex: até 4h" value="{{ contrato.tempo_cobertura if contrato else '' }}">
-      </div>
-      <div class="col-md-6">
+      <div class="col-md-3">
         <label class="form-label">Fotógrafos:</label>
-        <input type="number" name="qtd_fotografos" class="form-control" value="{{ contrato.qtd_fotografos if contrato else '' }}">
+        <input type="number" name="qtd_fotografos" class="form-control" value="{{ contrato.qtd_fotografos or '' }}">
       </div>
     </div>
+    <!-- Área dinâmica para múltiplos locais -->
+    <div id="locais-container">
+      {% if contrato and contrato.locais_evento %}
+        {% for local in contrato.locais_evento %}
+          <div class="local-entry border p-2 mb-2">
+            <div class="row">
+              <div class="col-md-4">
+                <label class="form-label">Local:</label>
+                <input type="text" name="local_evento[]" class="form-control" value="{{ local.local or '' }}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Estado:</label>
+                <select class="form-select estado-select" name="estado_evento[]" required
+                  data-estado="{{ local.estado or '' }}">
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Cidade:</label>
+                <select class="form-select cidade-select" name="cidade_evento[]" required
+                  data-cidade="{{ local.cidade or '' }}">
+                </select>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removerLocal(this)">Remover</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <button type="button" class="btn btn-secondary mb-3" onclick="adicionarLocal()">Adicionar Local</button>
   </div>
-
-  <!-- Descrição -->
+  
+  <!-- Descrição e Forma de Pagamento -->
   <div class="row mb-3">
     <div class="col-6">
       <label class="form-label">Descrição do serviço:</label>
-      <textarea name="descricao_servico" rows="3" class="form-control">{{ contrato.descricao_servico if contrato else '' }}</textarea>
+      <textarea name="descricao_servico" rows="3" class="form-control">{{ contrato.descricao_servico or '' }}</textarea>
     </div>
     <div class="col-md-6">
       <label class="form-label">Forma de pagamento:</label>
-      <textarea name="forma_pagamento" rows="3" class="form-control">{{ contrato.forma_pagamento if contrato else '' }}</textarea>
+      <textarea name="forma_pagamento" rows="3" class="form-control">{{ contrato.forma_pagamento or '' }}</textarea>
     </div>
-
   </div>
-
+  
   <!-- Botões -->
   <div class="text-center">
-    <button type="submit" class="btn btn-primary">{{ contrato and 'Atualizar' or 'Salvar' }} contrato</button>
+    <button type="submit" class="btn btn-primary">{{ 'Atualizar' if contrato else 'Salvar' }} contrato</button>
     <a href="{{ url_for('listar_contratos') }}" class="btn btn-secondary">Cancelar</a>
   </div>
 </form>
@@ -151,7 +166,138 @@
     document.getElementById('campos_ensaio').style.display = (tipo === 'ensaio') ? 'block' : 'none';
     document.getElementById('campos_evento').style.display = (tipo === 'evento') ? 'block' : 'none';
   }
-
   document.addEventListener("DOMContentLoaded", mostrarCampos);
+</script>
+
+<script>
+  function adicionarLocal() {
+      const container = document.getElementById('locais-container');
+      const div = document.createElement('div');
+      div.className = 'local-entry border p-2 mb-2';
+      div.innerHTML = `
+        <div class="row">
+          <div class="col-md-4">
+            <label class="form-label">Local:</label>
+            <input type="text" name="local_evento[]" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cidade:</label>
+            <input type="text" name="cidade_evento[]" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Estado:</label>
+            <input type="text" name="estado_evento[]" class="form-control" required>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removerLocal(this)">Remover</button>
+      `;
+      container.appendChild(div);
+  }
+  
+  function removerLocal(btn) {
+      btn.parentElement.remove();
+  }
+</script>
+<script>
+  function preencherEstados(selectElement) {
+      fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
+          .then(response => response.json())
+          .then(data => {
+              selectElement.innerHTML = '<option value="">Selecione o estado</option>';
+              data.sort((a, b) => a.nome.localeCompare(b.nome));
+              data.forEach(estado => {
+                  const opt = document.createElement('option');
+                  opt.value = estado.sigla;
+                  opt.textContent = estado.nome;
+                  selectElement.appendChild(opt);
+              });
+              const estadoSalvo = selectElement.getAttribute('data-estado').trim();
+              if (estadoSalvo) {
+                  selectElement.value = estadoSalvo;
+              }
+          })
+          .catch(error => console.error('Erro ao buscar estados do IBGE:', error));
+  }
+
+  function preencherCidades(selectElement, estado) {
+      if (!estado) return;
+      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estado}/municipios`)
+          .then(response => response.json())
+          .then(data => {
+              selectElement.innerHTML = '<option value="">Selecione a cidade</option>';
+              data.sort((a, b) => a.nome.localeCompare(b.nome));
+              data.forEach(cidade => {
+                  const opt = document.createElement('option');
+                  opt.value = cidade.nome;
+                  opt.textContent = cidade.nome;
+                  selectElement.appendChild(opt);
+              });
+              const cidadeSalva = selectElement.getAttribute('data-cidade').trim();
+              if (cidadeSalva) {
+                  selectElement.value = cidadeSalva;
+              }
+          })
+          .catch(error => console.error('Erro ao buscar cidades do IBGE:', error));
+  }
+
+  function adicionarLocal() {
+      const container = document.getElementById('locais-container');
+      const div = document.createElement('div');
+      div.className = 'local-entry border p-2 mb-2';
+      div.innerHTML = `
+        <div class="row">
+          <div class="col-md-4">
+            <label class="form-label">Local:</label>
+            <input type="text" name="local_evento[]" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Estado:</label>
+            <select class="form-select estado-select" name="estado_evento[]" required></select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cidade:</label>
+            <select class="form-select cidade-select" name="cidade_evento[]" required></select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removerLocal(this)">Remover</button>
+      `;
+      container.appendChild(div);
+
+      // Preencher os estados no novo select adicionado
+      const estadoSelect = div.querySelector('.estado-select');
+      preencherEstados(estadoSelect);
+
+      // Adicionar evento para preencher cidades quando o estado for alterado
+      const cidadeSelect = div.querySelector('.cidade-select');
+      estadoSelect.addEventListener('change', function() {
+          preencherCidades(cidadeSelect, this.value);
+      });
+  }
+
+  function removerLocal(btn) {
+      btn.parentElement.remove();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      // Preencher os estados nos selects de locais já existentes (caso seja edição)
+      document.querySelectorAll('.estado-select').forEach(select => {
+          preencherEstados(select);
+          select.addEventListener('change', function() {
+              const cidadeSelect = select.closest('.local-entry').querySelector('.cidade-select');
+              preencherCidades(cidadeSelect, this.value);
+          });
+      });
+
+      // **Preencher os selects padrão de estado e cidade**
+      const estadoContrato = document.getElementById('uf');
+      const cidadeContrato = document.getElementById('city');
+      
+      if (estadoContrato) {
+          preencherEstados(estadoContrato);
+          estadoContrato.addEventListener('change', function() {
+              preencherCidades(cidadeContrato, this.value);
+          });
+      }
+  });
 </script>
 {% endblock %}
